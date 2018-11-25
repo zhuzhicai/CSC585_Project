@@ -5,6 +5,11 @@ import re
 import spacy
 from collections import Counter
 import sys
+import torch.nn as nn
+from torch import optim
+import torch.nn.functional as F
+import torch.autograd as autograd
+import matplotlib.pyplot as plt
 
 # Flatten the json file
 def get_example(data):
@@ -62,6 +67,7 @@ def word_tokenizer_pos_reg_indexes(text):
     pos_tags = []
     ner_tags = []
     
+    nlp = spacy.load('en')
     doc = nlp(text)
     
     for token in doc:
@@ -79,7 +85,7 @@ def word_tokenizer_pos_reg_indexes(text):
         
     return tokens, pos_tags, ner_tags, token_indexes
 
-def sentences2mat(text):
+def sentences2mat(text, w2v_dict, pos_dict, ner_dict, unknown_vec):
     text = text.replace("\"", "``").replace("\"","''")
     known_set = set()
     unknown_set = set()
@@ -87,9 +93,9 @@ def sentences2mat(text):
 
     for index,token in enumerate(tokens):
         token = token.lower()
-        if token in w2v_cf_dict:
+        if token in w2v_dict:
             known_set.add(token)
-            word_tensor = w2v_cf_dict[token]
+            word_tensor = w2v_dict[token]
         else:
             unknown_set.add(token)
             word_tensor = unknown_vec
@@ -108,7 +114,6 @@ def prepro(filename1, filename2):
     data = json.load(open(filename1, 'r'))
     x = get_example(data['data'])
     w2v_cf_dict = read_in_w2v(filename2)
-    nlp = spacy.load('en')
 
     known_word_set = set()
     unknown_word_set = set()
@@ -143,13 +148,13 @@ def prepro(filename1, filename2):
         if item['question_id'] not in unrecognized_bow:
             unrecognized_bow = {item['question_id']:{'context':set(), 'question':set()}}
         if item['context'] not in context2mat:
-            context2mat[item['context']], known_set, unknown_set, context2indices['token_indexes'] = sentences2mat(item['context'])
+            context2mat[item['context']], known_set, unknown_set, context2indices['token_indexes'] = sentences2mat(item['context'],w2v_cf_dict, pos_dict, ner_dict, unknown_vec)
             known_word_set.update(known_set)
             unknown_word_set.update(unknown_set)
             unrecognized_bow[item['question_id']]['context'] = unknown_set
             context_length.append(len(context2indices['token_indexes']))        
         if item['question'] not in question2mat:
-            question2mat[item['question']], known_set, unknown_set, question2indices['token_indexes'] = sentences2mat(item['question'])
+            question2mat[item['question']], known_set, unknown_set, question2indices['token_indexes'] = sentences2mat(item['question'],w2v_cf_dict, pos_dict, ner_dict, unknown_vec)
             known_word_set.update(known_set)
             unknown_word_set.update(unknown_set)
             unrecognized_bow[item['question_id']]['question'] = unknown_set
@@ -299,7 +304,7 @@ def main():
             
             if i%5000 == 4999:
                 plt.plot(lossHistory, '.-')
-                plt.save()
+                plt.save('epoch'+str(epoch)+'_'+str(i)+'.png')
 
 
 
