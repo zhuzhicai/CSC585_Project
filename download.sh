@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# install required python packages
+install required python packages
 sudo apt-get update
 apt-get install unzip
 apt-get install python3

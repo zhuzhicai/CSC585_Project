@@ -25,6 +25,14 @@ Use the following command:
 python3 train.py data_file w2v_file
 ``` 
 
+### 2.3 Using dockerfile to train the model
+Use the dockerfile with following command:
+```
+docker build -t imagename .
+docker run -it imagename bash
+``` 
+The model and images will be in current directory.
+
 ## Citation
 We use the function to convert token to index in the QANet code
 
