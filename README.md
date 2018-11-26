@@ -26,4 +26,5 @@ python3 train.py data_file w2v_file
 ``` 
 
 ## Citation
-We use the function to convert token to index
+We use the function to convert token to index in the QANet code
+
